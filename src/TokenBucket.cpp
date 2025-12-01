@@ -1,51 +1,52 @@
-#include <fmt/core.h>
-#include <chrono>
-#include <mutex>
-#include <cstdint>
-#include <algorithm>
+#include "../include/TokenBucket.hpp"
+#include <stdexcept>
 
-class TokenBucket
+// constructor
+TokenBucket::TokenBucket(double c, double r)
+    : mux(), // Initialize mutex
+      capacity(c),
+      rate(r),
+      tokens(c),
+      last_check_time(std::chrono::steady_clock::now())
 {
-private:
-    std::mutex mux;
-    double tokens;                                         // tokens present currently in the bucket
-    std::chrono::steady_clock::time_point last_check_time; //  last time bucket was checked to be filled
-    double capacity;                                       // capacity of the bucket
-    double rate;                                           // tokens per second
-
-    // function to refill the bucket with per second rate prieciion
-
-    void refill()
+    // make sure inputs are valid
+    if (c <= 0 || r <= 0)
     {
-        auto now = std::chrono::steady_clock::now();   // the time at which refill was called
-        auto time_elapsed = now - last_check_time;     // time b/w current and last refill calls
-        using Seconds = std::chrono::duration<double>; // converting the time to seconds
-        double elapsed_seconds = std::chrono::duration_cast<Seconds>(time_elapsed).count();
-        // make sure we don't proceed if time hasn't passed
-        if (elapsed_seconds <= 0)
-        {
-            last_check_time = now; // update the last check time and break
-            return;
-        }
-        double tokens_to_add = elapsed_seconds * rate;       // tokens to add acc to rate
-        tokens = std::min(tokens_to_add + tokens, capacity); // update the tokens
-        last_check_time = now;                               // update the last check time
-    };
-
-public:
-    // cunstructor to intitiaze and declare values
-    TokenBucket(double c, double r) : mux(), capacity(c), rate(r), tokens(c), last_check_time(std::chrono::steady_clock::now()) {};
-    // function to allow clients interact with bucket
-
-    bool allow(int n)
-    {
-        std::lock_guard<std::mutex> lock(mux); // lock the function
-        refill();                              // call refill and fill accordingly
-        if (tokens >= n)
-        {
-            tokens = tokens - n; // remove one token each time client sents
-            return true;         // allow to access server
-        }
-        return false; // don't allow
+        throw std::invalid_argument("Capacity and rate must be greater than zero.");
     }
-};
+}
+
+// refill function  Recalculates tokens based on elapsed time
+void TokenBucket::refill()
+{
+    auto now = std::chrono::steady_clock::now();
+    auto time_elapsed = now - last_check_time;
+    using Seconds = std::chrono::duration<double>;
+    double elapsed_seconds = std::chrono::duration_cast<Seconds>(time_elapsed).count();
+    // if no time passed update last cheked time and and exit.
+    if (elapsed_seconds <= 0)
+    {
+        last_check_time = now;
+        return;
+    }
+    // Calculate tokens
+    double tokens_to_add = elapsed_seconds * rate;
+    tokens = std::min(tokens + tokens_to_add, capacity);
+    last_check_time = now;
+}
+// thread-safe gatekeeper.
+bool TokenBucket::allow(int n)
+{
+    // Lock the function
+    std::lock_guard<std::mutex> lock(mux);
+    // Update state to current time
+    refill();
+    // Check and consume requested tokens (n).
+    if (tokens >= n)
+    {
+        tokens -= n; // remove tokens from the bucket
+        return true; // ALLOWED
+    }
+
+    return false; // not allowed
+}
