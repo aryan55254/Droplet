@@ -41,6 +41,11 @@ bool TokenBucket::allow(int n)
     std::lock_guard<std::mutex> lock(mux);
     // Update state to current time
     refill();
+    // extra check 
+    if (n <= 0)
+    {
+        return false;
+    }
     // Check and consume requested tokens (n).
     if (tokens >= n)
     {
