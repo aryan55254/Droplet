@@ -1,0 +1,89 @@
+# General
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+*.out
+*.app
+*.dSYM/
+*.stackdump
+core
+core.*
+
+# Build directories
+/build/
+/build-*/
+/cmake-build-*/
+bin/
+/lib/
+/target/
+/dist/
+/out/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Autotools / generated
+config.status
+config.log
+*.la
+*.lo
+*.rej
+
+# Coverage / profiling
+*.gcda
+*.gcno
+*.gcov
+coverage/
+*.prof
+
+# Package managers / dependency dirs
+.deps/
+.dep/
+.vcpkg/
+vcpkg_installed/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.iml
+*.sublime-*
+*.code-workspace
+*.swp
+*~ 
+*.tmp
+
+# Visual Studio specific
+*.vcxproj.user
+*.suo
+*.user
+*.pch
+ipch/
+.vs/
+
+# Qt Creator / moc/uic
+moc_*
+qrc_*
+ui_*
+
+# Precompiled headers, generated files
+*.gch
+*.pch
+*.i
+
+# Logs and temporary
+*.log
+*.tmp
+*.bak
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+desktop.ini
