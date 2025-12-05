@@ -7,7 +7,8 @@ TokenBucket::TokenBucket(double c, double r)
       capacity(c),
       rate(r),
       tokens(c),
-      last_check_time(std::chrono::steady_clock::now())
+      last_check_time(std::chrono::steady_clock::now()),
+      last_accessed(std::chrono::steady_clock::now())
 {
     // make sure inputs are valid
     if (c <= 0 || r <= 0)
@@ -34,14 +35,20 @@ void TokenBucket::refill()
     tokens = std::min(tokens + tokens_to_add, capacity);
     last_check_time = now;
 }
+TimePoint TokenBucket::getLastAccessedTime() const
+{
+    std::lock_guard<std::mutex> lock(mux);
+    return last_accessed;
+}
 // thread-safe gatekeeper.
 bool TokenBucket::allow(int n)
 {
     // Lock the function
     std::lock_guard<std::mutex> lock(mux);
+    last_accessed = std::chrono::steady_clock::now();
     // Update state to current time
     refill();
-    // extra check 
+    // extra check
     if (n <= 0)
     {
         return false;
